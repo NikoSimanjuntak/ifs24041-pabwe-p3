@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root{
-      --bg:#dde5e1; --panel:#fbfcfb; --ink:#17302b; --muted:#5b706a; --line:#cbd8d3;
+      --bg:#dde5e1; --panel:#fbfcfb; --ink:#17302b; --muted:#3d504a; --line:#cbd8d3;
       --accent:#17594a; --accent-ink:#fff; --in:#1b7f4b; --out:#b3402a; --gold:#e3b23c; --soft:#eef3f1;
       --r:10px;
     }
@@ -113,10 +113,12 @@
       <p>Catat pengeluaran, simpan tautan, dan asah pengetahuan web dalam satu halaman.</p>
     </header>
 
-    <nav class="tabs" role="tablist" aria-label="Fitur Lembar">
+    <nav aria-label="Fitur Lembar">
+    <div class="tabs" role="tablist" aria-label="Pilih fitur">
       <button class="tab" role="tab" id="tab-tx" data-tab="tx" aria-controls="panel-tx">Pengeluaran</button>
       <button class="tab" role="tab" id="tab-bm" data-tab="bm" aria-controls="panel-bm">Tautan</button>
       <button class="tab" role="tab" id="tab-kuis" data-tab="kuis" aria-controls="panel-kuis">Kuis</button>
+    </div>
     </nav>
 
     <main>
