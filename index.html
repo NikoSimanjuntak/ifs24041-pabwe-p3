@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lembar — Pengeluaran, Tautan, dan Kuis</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#dde5e1; --panel:#fbfcfb; --ink:#17302b; --muted:#5b706a; --line:#cbd8d3;
+      --accent:#17594a; --accent-ink:#fff; --in:#1b7f4b; --out:#b3402a; --gold:#e3b23c; --soft:#eef3f1;
+      --r:10px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Plus Jakarta Sans",system-ui,sans-serif}
+    body.lock{overflow:hidden}
+    h1,h2,h3,p{margin:0}
+    button,input,select,textarea{font:inherit;color:inherit}
+    :focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+    .wrap{max-width:1080px;margin:0 auto;padding:0 16px}
+
+    /* Header & tab (bentuk seperti tab indeks buku besar) */
+    .top{padding:28px 0 18px}
+    .top h1{font-size:2rem;font-weight:800;letter-spacing:-.02em}
+    .top p{color:var(--muted)}
+    .tabs{display:flex;gap:4px;align-items:flex-end;overflow-x:auto}
+    .tab{flex:1 1 0;min-width:max-content;padding:11px 18px;border:1px solid var(--line);border-bottom:0;border-radius:var(--r) var(--r) 0 0;
+      background:#cfdad5;color:var(--muted);font-weight:600;cursor:pointer}
+    .tab[aria-selected="true"]{background:var(--panel);color:var(--ink);padding-top:15px;font-weight:700;box-shadow:inset 0 3px 0 var(--accent)}
+    main{background:var(--panel);border:1px solid var(--line);border-radius:0 0 var(--r) var(--r);padding:20px;min-height:60vh}
+    [hidden]{display:none!important}
+
+    /* Komponen umum */
+    .cols{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:20px;align-items:start}
+    .card{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:18px}
+    .card h2{font-size:1.05rem;margin-bottom:12px}
+    .fld{display:block;margin-bottom:12px}
+    .fld>span{display:block;font-size:.85rem;font-weight:600;margin-bottom:4px}
+    .fld input,.fld select,.fld textarea,.toolbar input,.toolbar select{width:100%;padding:9px 11px;border:1px solid #9fb2ab;border-radius:8px;background:#fff}
+    .fld [aria-invalid="true"]{border-color:var(--out)}
+    .err{display:block;min-height:1.1em;color:var(--out);font-size:.8rem;margin-top:3px}
+    .btn{padding:9px 16px;border-radius:8px;border:1px solid transparent;font-weight:700;cursor:pointer}
+    .btn.primary{background:var(--accent);color:var(--accent-ink)}
+    .btn.danger{background:var(--out);color:#fff}
+    .btn.ghost{background:transparent;border-color:#9fb2ab}
+    .btn.sm{padding:5px 10px;font-size:.82rem}
+    .toolbar{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+    .toolbar.b{grid-template-columns:2fr 1fr}
+    ul.list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+    .item{display:flex;gap:12px;justify-content:space-between;align-items:center;border:1px solid var(--line);border-radius:8px;padding:11px 13px;background:var(--panel)}
+    .item h3{font-size:1rem;overflow-wrap:anywhere}
+    .item .meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:.8rem;color:var(--muted);margin-top:3px}
+    .badge{padding:1px 8px;border-radius:99px;background:var(--soft);border:1px solid var(--line);font-weight:600;color:var(--ink)}
+    .badge.in{color:var(--in)} .badge.out{color:var(--out)}
+    .side{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none}
+    .amt{font-weight:800}
+    .amt.in{color:var(--in)} .amt.out{color:var(--out)}
+    .row{display:flex;gap:6px}
+    .empty{text-align:center;color:var(--muted);padding:28px 12px;border:1px dashed #9fb2ab;border-radius:8px}
+    .empty strong{display:block;color:var(--ink)}
+    .note{color:var(--muted);font-size:.9rem;margin-top:4px;overflow-wrap:anywhere}
+    .item a{color:var(--accent);font-weight:700;text-decoration-thickness:2px}
+    .url{font-size:.82rem;color:var(--muted);overflow-wrap:anywhere;display:block}
+
+    /* Ringkasan saldo */
+    .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+    .summary div{border-left:4px solid var(--line);padding:4px 12px}
+    .summary dt{font-size:.85rem;color:var(--muted)}
+    .summary dd{margin:0;font-size:1.35rem;font-weight:800}
+    .summary .in{border-color:var(--in)} .summary .out{border-color:var(--out)} .summary .bal{border-color:var(--accent)}
+
+    /* Kuis */
+    .stage{max-width:640px;margin:0 auto}
+    .stage h2{font-size:1.35rem;margin-bottom:12px}
+    .stage h2:focus{outline:none}
+    .bar{height:8px;background:var(--soft);border-radius:99px;overflow:hidden;margin-bottom:14px}
+    .bar i{display:block;height:100%;background:var(--accent);transition:width .3s}
+    .opts{display:grid;gap:8px;margin-bottom:14px}
+    .opt{text-align:left;padding:12px 14px;border:2px solid var(--line);border-radius:8px;background:#fff;cursor:pointer}
+    .opt:hover:not(:disabled){border-color:var(--accent)}
+    .opt.ok{border-color:var(--in);background:#e5f4ec} .opt.no{border-color:var(--out);background:#fbe9e5}
+    .opt:disabled{cursor:default;color:inherit}
+    .fb{margin-bottom:12px;font-weight:600}
+    .hs{display:inline-block;background:#fbf1d3;border:1px solid var(--gold);border-radius:8px;padding:6px 12px;margin:8px 0 16px;font-weight:700}
+    .big{font-size:3rem;font-weight:800;line-height:1.1}
+
+    /* Modal */
+    .overlay{position:fixed;inset:0;background:rgba(15,30,26,.55);display:grid;place-items:center;padding:16px;z-index:10}
+    .dialog{background:#fff;border-radius:var(--r);padding:22px;width:100%;max-width:420px;max-height:92vh;overflow:auto}
+    .dialog h2{margin-bottom:12px;font-size:1.15rem}
+    .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+    .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:8px;z-index:20;font-weight:600}
+
+    footer{text-align:center;color:var(--muted);font-size:.85rem;padding:18px 0 28px}
+
+    @media (max-width:800px){
+      .cols{grid-template-columns:1fr}
+      .toolbar{grid-template-columns:1fr 1fr}.toolbar input{grid-column:1/-1}
+      .toolbar.b{grid-template-columns:1fr}
+      .summary{grid-template-columns:1fr}
+      .item{flex-direction:column;align-items:stretch}.side{flex-direction:row;justify-content:space-between;align-items:center}
+    }
+    @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <h1>Lembar</h1>
+      <p>Catat pengeluaran, simpan tautan, dan asah pengetahuan web dalam satu halaman.</p>
+    </header>
+
+    <nav class="tabs" role="tablist" aria-label="Fitur Lembar">
+      <button class="tab" role="tab" id="tab-tx" data-tab="tx" aria-controls="panel-tx">Pengeluaran</button>
+      <button class="tab" role="tab" id="tab-bm" data-tab="bm" aria-controls="panel-bm">Tautan</button>
+      <button class="tab" role="tab" id="tab-kuis" data-tab="kuis" aria-controls="panel-kuis">Kuis</button>
+    </nav>
+
+    <main>
+      <!-- Panel 1: Catatan pengeluaran harian -->
+      <section id="panel-tx" role="tabpanel" aria-labelledby="tab-tx" tabindex="0">
+        <dl class="summary" aria-label="Ringkasan keuangan">
+          <div class="in"><dt>Total pemasukan</dt><dd id="sum-in">Rp0</dd></div>
+          <div class="out"><dt>Total pengeluaran</dt><dd id="sum-out">Rp0</dd></div>
+          <div class="bal"><dt>Saldo</dt><dd id="sum-bal">Rp0</dd></div>
+        </dl>
+        <div class="cols">
+          <div class="card">
+            <h2>Tambah transaksi</h2>
+            <form id="form-tx" novalidate></form>
+          </div>
+          <div class="card">
+            <h2>Riwayat transaksi</h2>
+            <div class="toolbar">
+              <input type="search" id="tx-q" placeholder="Cari judul…" aria-label="Cari judul transaksi">
+              <select id="tx-tipe" aria-label="Filter tipe">
+                <option value="semua">Semua tipe</option><option>Pemasukan</option><option>Pengeluaran</option>
+              </select>
+              <select id="tx-kat" aria-label="Filter kategori"></select>
+              <select id="tx-urut" aria-label="Urutkan">
+                <option value="terbaru">Terbaru</option><option value="terlama">Terlama</option>
+                <option value="besar">Jumlah terbesar</option><option value="kecil">Jumlah terkecil</option>
+              </select>
+            </div>
+            <ul class="list" id="list-tx"></ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Panel 2: Bookmark / link manager -->
+      <section id="panel-bm" role="tabpanel" aria-labelledby="tab-bm" tabindex="0" hidden>
+        <div class="cols">
+          <div class="card">
+            <h2>Simpan tautan</h2>
+            <form id="form-bm" novalidate></form>
+          </div>
+          <div class="card">
+            <h2>Daftar tautan</h2>
+            <div class="toolbar b">
+              <input type="search" id="bm-q" placeholder="Cari nama, URL, atau kategori…" aria-label="Cari tautan">
+              <select id="bm-urut" aria-label="Urutkan">
+                <option value="terbaru">Terbaru</option><option value="az">Judul A–Z</option><option value="za">Judul Z–A</option>
+              </select>
+            </div>
+            <ul class="list" id="list-bm"></ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Panel 3: Kuis interaktif -->
+      <section id="panel-kuis" role="tabpanel" aria-labelledby="tab-kuis" tabindex="0" hidden>
+        <div class="stage" id="kuis-stage"></div>
+      </section>
+    </main>
+
+    <footer>Data tersimpan di peramban Anda (localStorage) dan tidak dikirim ke server mana pun.</footer>
+  </div>
+
+  <!-- Modal bersama untuk ubah & hapus -->
+  <div class="overlay" id="modal" hidden>
+    <div class="dialog" id="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title"></div>
+  </div>
+
+  <script src="assets/script.js"></script>
+</body>
+</html>
