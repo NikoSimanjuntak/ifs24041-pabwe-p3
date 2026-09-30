@@ -119,18 +119,19 @@ document.addEventListener('keydown', (e) => {
 const tabs = $$('.tab');
 const panels = $$('[role="tabpanel"]');
 
-// Setiap tab punya path sendiri (dirutekan ke index.html lewat file _redirects)
-const JALUR = { tx: '/pengeluaran', bm: '/tautan', kuis: '/kuis' };
+// Setiap tab punya alamat sendiri lewat query string: /?tab=expense | bookmark | quiz
+const NAMA_TAB = { tx: 'expense', bm: 'bookmark', kuis: 'quiz' };
 const JUDUL = { tx: 'Catatan Pengeluaran', bm: 'Manajer Tautan', kuis: 'Kuis Interaktif' };
 
+// Baca ?tab=... dari URL; mengembalikan id tab internal atau null
 const tabDariUrl = () => {
-  const path = location.pathname.replace(/\/+$/, '').toLowerCase();
-  return Object.keys(JALUR).find((k) => JALUR[k] === path) ?? null;
+  const nilai = (new URLSearchParams(location.search).get('tab') || '').toLowerCase();
+  return Object.keys(NAMA_TAB).find((k) => NAMA_TAB[k] === nilai) ?? null;
 };
 
 // riwayat: 'push' (klik tab) | null (tidak mengubah URL)
 function pilihTab(id, { fokus = false, riwayat = 'push' } = {}) {
-  if (!JALUR[id]) id = 'tx';
+  if (!NAMA_TAB[id]) id = 'tx';
   tabs.forEach((t) => {
     const aktif = t.dataset.tab === id;
     t.setAttribute('aria-selected', String(aktif));
@@ -141,8 +142,8 @@ function pilihTab(id, { fokus = false, riwayat = 'push' } = {}) {
   document.title = `${JUDUL[id]} — Lembar`;
   store.set(KEY.tab, id); // ingat tab terakhir
   // Ubah URL hanya di http(s); dibuka langsung dari file:// tidak didukung pushState
-  if (riwayat && location.protocol.startsWith('http') && location.pathname.replace(/\/+$/, '') !== JALUR[id]) {
-    try { history.pushState({ tab: id }, '', JALUR[id]); } catch { /* abaikan */ }
+  if (riwayat && location.protocol.startsWith('http') && tabDariUrl() !== id) {
+    try { history.pushState({ tab: id }, '', `?tab=${NAMA_TAB[id]}`); } catch { /* abaikan */ }
   }
 }
 tabs.forEach((t, i) => {
