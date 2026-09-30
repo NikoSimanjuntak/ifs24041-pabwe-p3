@@ -119,8 +119,18 @@ document.addEventListener('keydown', (e) => {
 const tabs = $$('.tab');
 const panels = $$('[role="tabpanel"]');
 
-function pilihTab(id, fokus = false) {
-  if (!tabs.some((t) => t.dataset.tab === id)) id = 'tx';
+// Setiap tab punya path sendiri (dirutekan ke index.html lewat file _redirects)
+const JALUR = { tx: '/pengeluaran', bm: '/tautan', kuis: '/kuis' };
+const JUDUL = { tx: 'Catatan Pengeluaran', bm: 'Manajer Tautan', kuis: 'Kuis Interaktif' };
+
+const tabDariUrl = () => {
+  const path = location.pathname.replace(/\/+$/, '').toLowerCase();
+  return Object.keys(JALUR).find((k) => JALUR[k] === path) ?? null;
+};
+
+// riwayat: 'push' (klik tab) | null (tidak mengubah URL)
+function pilihTab(id, { fokus = false, riwayat = 'push' } = {}) {
+  if (!JALUR[id]) id = 'tx';
   tabs.forEach((t) => {
     const aktif = t.dataset.tab === id;
     t.setAttribute('aria-selected', String(aktif));
@@ -128,15 +138,22 @@ function pilihTab(id, fokus = false) {
     if (aktif && fokus) t.focus();
   });
   panels.forEach((p) => { p.hidden = p.id !== `panel-${id}`; });
+  document.title = `${JUDUL[id]} — Lembar`;
   store.set(KEY.tab, id); // ingat tab terakhir
+  // Ubah URL hanya di http(s); dibuka langsung dari file:// tidak didukung pushState
+  if (riwayat && location.protocol.startsWith('http') && location.pathname.replace(/\/+$/, '') !== JALUR[id]) {
+    try { history.pushState({ tab: id }, '', JALUR[id]); } catch { /* abaikan */ }
+  }
 }
 tabs.forEach((t, i) => {
   t.addEventListener('click', () => pilihTab(t.dataset.tab));
   t.addEventListener('keydown', (e) => {
     const geser = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
-    if (geser) pilihTab(tabs[(i + geser + tabs.length) % tabs.length].dataset.tab, true);
+    if (geser) pilihTab(tabs[(i + geser + tabs.length) % tabs.length].dataset.tab, { fokus: true });
   });
 });
+// Tombol back/forward browser
+window.addEventListener('popstate', () => pilihTab(tabDariUrl() ?? 'tx', { riwayat: null }));
 
 /* ---------- 4. Catatan Pengeluaran Harian ---------- */
 const KATEGORI_TX = ['Makan & minum', 'Transportasi', 'Belanja', 'Tagihan', 'Pendidikan', 'Hiburan', 'Gaji', 'Lainnya'];
@@ -520,4 +537,5 @@ function initKuis() {
 initTx();
 initBm();
 initKuis();
-pilihTab(store.get(KEY.tab, 'tx')); // pulihkan tab terakhir
+// Path URL diutamakan; jika tidak cocok, pulihkan tab terakhir dari localStorage
+pilihTab(tabDariUrl() ?? store.get(KEY.tab, 'tx'), { riwayat: null });
